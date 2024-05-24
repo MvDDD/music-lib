@@ -1,0 +1,26 @@
+body {
+	background: #000;
+	color: #fff;
+}
+
+button {
+	background: #5f5;
+	border: none;
+	border-radius: 5px;
+	width: 200px;
+	height: 50px;
+}
+
+input {
+	border: none;
+	border-radius: 5px;
+	width: 500px;
+	height: 50px;
+}
+
+.input {
+	margin: 10px;
+	padding: 10px;
+	border-radius: 5px;
+	background: #ccc;
+}

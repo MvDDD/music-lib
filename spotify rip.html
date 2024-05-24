@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Fetch, Parse, and Reformat JSON from URL Content</title>
+    <link rel="stylesheet" type="text/css" href="./styles/style.css">
+</head>
+<body>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+	<h1>!! only the first 100 items will be converted !!</h1><br>
+	<div class="input"><input type="text" id="playlist" placeholder="enter the playlist sharing url"><button onclick="start()">start</button></div><br>
+	<script>
+        let messages = {}
+        async function waitfor(id, ws) {
+            let i = new Promise((resolve, reject)=>{
+                ws.on("message", m=>{
+                    let json = JSON.stringify(m.data);
+                    if (json.index === id) {
+                        resolve([json.name, json.data])
+                    }
+                })
+            })
+            return await i
+        }
+
+        async function start() {
+            let ws = new WebSocket("ws://your_server_address:port");
+            ws.onopen = () => {
+                let playlistValue = document.getElementById("playlist").value;
+                ws.send(JSON.stringify({"url":playlistValue, "type":"spotify"}));
+            };
+            ws.onmessage = async (event) => {
+                const message = JSON.parse(event.data);
+                if (message.event === "started") {
+                    var length = message.items;
+                    for (let i = 0; i < length; i++){
+                        let response = await waitfor(i, ws)
+                        messages[i] = {name:response[0], data:response[1]}
+                    }
+                    const zip = new JSZip();
+                    for (let i = 0; i < messages.length; i++) {
+                        const messageData = messages[i].data;
+                        zip.file(`${messages[i].name}.mp3`, messageData, { base64: true, compression: "DEFLATE" });
+                    }
+                    const zipBlob = await zip.generateAsync({ type: "blob" });
+                    const downloadLink = document.createElement("a");
+                    downloadLink.href = URL.createObjectURL(zipBlob);
+                    downloadLink.download = "playlist.zip";
+                    downloadLink.target = "_blank"
+                    downloadLink.click();
+                    ws.close()
+                }
+            };
+        }
+    </script>
+</body>
+</html>
